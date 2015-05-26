@@ -38,9 +38,12 @@ import android.util.Log;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
+import org.restlet.data.MediaType;
 import org.restlet.ext.gson.GsonConverter;
 import org.restlet.representation.Representation;
+import org.restlet.representation.Variant;
 import org.restlet.resource.ServerResource;
+import org.restlet.routing.Variable;
 
 /**
  * Implementation of the resource containing the list of mail accounts.
@@ -51,7 +54,9 @@ public class AccountsServerResource extends ServerResource implements
     private static final String TAG = "AccountsServerResource";
 
     /** Static list of accounts stored in memory. */
-    private static final List<Account> accounts = new CopyOnWriteArrayList<Account>();
+    private static final List<Account> mAccounts = new CopyOnWriteArrayList<Account>();
+
+    private GsonConverter mConverter = new GsonConverter();
 
     /**
      * Returns the static list of accounts stored in memory.
@@ -59,22 +64,31 @@ public class AccountsServerResource extends ServerResource implements
      * @return The static list of accounts.
      */
     public static List<Account> getAccounts() {
-        return accounts;
+        return mAccounts;
     }
 
     public Representation represent() {
-//        return new JacksonRepresentation<List<Account>>(accounts);
-        return null;
+        Representation representation = null;
+        Variant variant = new Variant(MediaType.APPLICATION_ALL_JSON);
+
+        Accounts accounts = new Accounts();
+        accounts.accounts = mAccounts;
+
+        try {
+            representation = mConverter.toRepresentation(accounts, variant, null);
+        } catch (Exception exp) {
+            Log.e(TAG, exp.getMessage());
+        }
+
+        return representation;
     }
 
     public String add(Representation representation) {
-
-        GsonConverter converter = new GsonConverter();
         Account account = null;
         String result = "-1";
 
         try {
-            account = converter.toObject(representation, Account.class, null);
+            account = mConverter.toObject(representation, Account.class, null);
         } catch (Exception exp) {
             Log.e(TAG, exp.getMessage());
         }
